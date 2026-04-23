@@ -42,6 +42,14 @@ class TestPair(unittest.TestCase):
         result = pair(make_game([sb, bb]))
         self.assertIsNone(result)
 
+    def test_pair_of_aces_beats_pair_of_kings(self):
+        """Pair of Aces (value=1) should rank above pair of Kings (value=13)."""
+        community = [Card(2, "♣"), Card(5, "♦"), Card(9, "♠"), Card(11, "♥"), Card(4, "♣")]
+        sb = make_player("SB", Card(1, "♠"), Card(1, "♥"), community)  # pair of Aces
+        bb = make_player("BB", Card(13, "♠"), Card(13, "♥"), community)  # pair of Kings
+        result = pair(make_game([sb, bb]))
+        self.assertEqual(result, [sb])
+
     def test_tied_pair_splits_pot(self):
         """Both players have identical pair and kickers — both should be returned."""
         community = [Card(7, "♣"), Card(7, "♦"), Card(13, "♠"), Card(9, "♥"), Card(5, "♦")]
