@@ -87,20 +87,33 @@ def fullhouse(game):
     return None
 
 def flush(game):
+    """
+    Finds the player(s) with the best flush from their 7-card combined hand.
+
+    Args:
+        game: A Poker instance containing a list of Hand objects in game.players.
+              Each player must have player.combined populated (2 hole cards + 5 community cards).
+
+    Returns:
+        A list of Hand objects with the best flush. Returns multiple players on a tie,
+        or None if no player has a flush.
+    """
     best_players = []
     best_high = None
     for player in game.players:
+        # Group card values by suit to detect 5+ cards of the same suit
         suit_groups = {}
         for card in player.combined:
             suit_groups.setdefault(card.suit, []).append(card.value)
         for suit, values in suit_groups.items():
             if len(values) >= 5:
-                top_five = sorted(values, reverse=True)[:5]
-                high = top_five[0]
-                if best_high is None or high > best_high:
-                    best_high = high
+                # Take the 5 highest cards of the flush suit for comparison
+                top_five = tuple(sorted(values, reverse=True)[:5])
+                if best_high is None or top_five > best_high:
+                    best_high = top_five
                     best_players = [player]
-                elif high == best_high:
+                elif top_five == best_high:
+                    # Identical 5-card flush — split the pot
                     best_players.append(player)
     if best_players:
         return best_players
