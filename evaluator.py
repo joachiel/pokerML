@@ -1,4 +1,5 @@
 from collections import Counter
+from types import SimpleNamespace
 
 from poker import Poker, Hand, Deck
 
@@ -263,6 +264,14 @@ def highcard(game):
     return None
 
 def evaluate_winner(game):
+    active = [p for p in game.players if not p.folded]
+    # If everyone else folded, last player wins without showdown
+    if len(active) == 1:
+        print(f"Winner by fold: {active[0].position}")
+        game.payout(active)
+        return active
+    # Only evaluate players still in the hand
+    game = SimpleNamespace(players=active, payout=game.payout)
     # List of (function, hand name) in order of poker hand strength
     hand_checks = [
         (royalflush, "Royal Flush"),
@@ -298,7 +307,7 @@ if __name__ == "__main__":
     players = [Hand(positions[i], 100.00) for i in range(num_players)]
     for i in range(10):
         print(f"\n=== Game {i+1} ===")
-        game = Poker(players)
+        game = Poker(players, blind=2)
         # Print each player's hand (hole cards)
         print("Player hands:")
         for player in players:
@@ -317,6 +326,12 @@ if __name__ == "__main__":
             player.card1 = None
             player.card2 = None
             player.combined = []
+            player.folded = False
+            player.bet_this_round = 0.0
+        # Rotate positions so blinds move to the next player each game
+        players = players[1:] + players[:1]
+        for j, player in enumerate(players):
+            player.position = positions[j]
 
     print("\nFinal stacks:")
     total = 0
