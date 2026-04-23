@@ -1,6 +1,10 @@
 from collections import Counter
 
 from poker import Poker, Hand, Deck
+
+def ace_high(value):
+    """Map Ace (stored as 1) to 14 so it ranks above King in comparisons."""
+    return 14 if value == 1 else value
 def royalflush(game):
     royal_values = {10, 11, 12, 13, 1}
     for player in game.players:
@@ -47,7 +51,8 @@ def fourofakind(game):
     for player in game.players:
         value_counts = {}
         for card in player.combined:
-            value_counts[card.value] = value_counts.get(card.value, 0) + 1
+            v = ace_high(card.value)
+            value_counts[v] = value_counts.get(v, 0) + 1
         for value, count in value_counts.items():
             if count == 4:
                 if best_value is None or value > best_value:
@@ -66,7 +71,8 @@ def fullhouse(game):
     for player in game.players:
         value_counts = {}
         for card in player.combined:
-            value_counts[card.value] = value_counts.get(card.value, 0) + 1
+            v = ace_high(card.value)
+            value_counts[v] = value_counts.get(v, 0) + 1
         threes = sorted([v for v, c in value_counts.items() if c >= 3], reverse=True)
         pairs = sorted([v for v, c in value_counts.items() if c >= 2 and v not in threes], reverse=True)
         if threes and pairs:
@@ -99,17 +105,17 @@ def flush(game):
         or None if no player has a flush.
     """
     best_players = []
-    best_high = None
+    best_high: tuple = ()
     for player in game.players:
         # Group card values by suit to detect 5+ cards of the same suit
         suit_groups = {}
         for card in player.combined:
-            suit_groups.setdefault(card.suit, []).append(card.value)
+            suit_groups.setdefault(card.suit, []).append(ace_high(card.value))
         for suit, values in suit_groups.items():
             if len(values) >= 5:
                 # Take the 5 highest cards of the flush suit for comparison
                 top_five = tuple(sorted(values, reverse=True)[:5])
-                if best_high is None or top_five > best_high:
+                if top_five > best_high:
                     best_high = top_five
                     best_players = [player]
                 elif top_five == best_high:
@@ -143,11 +149,12 @@ def straight(game):
 def threeofakind(game):
     best_players = []
     best_value = None
-    best_kickers = None
+    best_kickers: tuple = ()
     for player in game.players:
         value_counts = {}
         for card in player.combined:
-            value_counts[card.value] = value_counts.get(card.value, 0) + 1
+            v = ace_high(card.value)
+            value_counts[v] = value_counts.get(v, 0) + 1
         three_val = None
         for value, count in value_counts.items():
             if count == 3:
@@ -175,11 +182,12 @@ def threeofakind(game):
 def twopair(game):
     best_players = []
     best_pairs = None
-    best_kicker = None
+    best_kicker = -1
     for player in game.players:
         value_counts = {}
         for card in player.combined:
-            value_counts[card.value] = value_counts.get(card.value, 0) + 1
+            v = ace_high(card.value)
+            value_counts[v] = value_counts.get(v, 0) + 1
         pairs = sorted([v for v, c in value_counts.items() if c >= 2], reverse=True)
         if len(pairs) >= 2:
             top_two = tuple(pairs[:2])
@@ -216,7 +224,7 @@ def pair(game):
     best_players = []
     for player in game.players:
         # Count how many times each card value appears across all 7 cards
-        counts = Counter(card.value for card in player.combined)
+        counts = Counter(ace_high(card.value) for card in player.combined)
         # Find all values that appear exactly twice — skip if trips/quads are present
         pair_vals = [v for v, c in counts.items() if c == 2]
         if len(pair_vals) != 1 or any(c >= 3 for c in counts.values()):
@@ -243,7 +251,7 @@ def highcard(game):
     best_cards = None
     for player in game.players:
         # Get the 5 highest cards
-        top_five = sorted([card.value for card in player.combined], reverse=True)[:5]
+        top_five = sorted([ace_high(card.value) for card in player.combined], reverse=True)[:5]
         top_five_tuple = tuple(top_five)
         if best_cards is None or top_five_tuple > best_cards:
             best_cards = top_five_tuple
