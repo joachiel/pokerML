@@ -204,14 +204,13 @@ def pair(game):
     for player in game.players:
         # Count how many times each card value appears across all 7 cards
         counts = Counter(card.value for card in player.combined)
-        # Find all values that appear exactly twice
+        # Find all values that appear exactly twice — skip if trips/quads are present
         pair_vals = [v for v, c in counts.items() if c == 2]
-        if not pair_vals:
+        if len(pair_vals) != 1 or any(c >= 3 for c in counts.values()):
             continue
-        # Take the highest pair value (in case of two pairs, twopair() already ruled that out)
-        pair_val = max(pair_vals)
-        # The 3 highest remaining card values are the kickers used to break ties
-        kickers = tuple(sorted([v for v, c in counts.items() if c != 2], reverse=True)[:3])
+        pair_val = pair_vals[0]
+        # Exclude only the paired value when computing kickers (not all duplicates)
+        kickers = tuple(sorted([v for v in counts if v != pair_val], reverse=True)[:3])
         if best_pair_value is None or pair_val > best_pair_value:
             best_pair_value = pair_val
             best_kickers = kickers
