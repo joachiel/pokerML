@@ -54,7 +54,7 @@ class Hand():
         return str(self.card2) if self.card2 else None
 
     def getCards(self):
-        return str(self.getCard1(), self.getCard2())
+        return f"{self.getCard1()}, {self.getCard2()}"
     
     def setCombined(self, cards):
         self.combined = []
