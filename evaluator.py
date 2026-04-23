@@ -1,3 +1,5 @@
+from collections import Counter
+
 from poker import Poker, Hand, Deck
 def royalflush(game):
     royal_values = {10, 11, 12, 13, 1}
@@ -185,13 +187,43 @@ def twopair(game):
     return None
 
 def pair(game):
+    """
+    Finds the player(s) with the best single pair from their 7-card combined hand.
+
+    Args:
+        game: A Poker instance containing a list of Hand objects in game.players.
+              Each player must have player.combined populated (2 hole cards + 5 community cards).
+
+    Returns:
+        A list of Hand objects with the best pair. Returns multiple players on a tie,
+        or None if no player has a pair.
+    """
+    best_pair_value = None
+    best_kickers = ()
+    best_players = []
     for player in game.players:
-        value_counts = {}
-        for card in player.combined:
-            value_counts[card.value] = value_counts.get(card.value, 0) + 1
-        if any(count == 2 for count in value_counts.values()):
-            return player
-    return None
+        # Count how many times each card value appears across all 7 cards
+        counts = Counter(card.value for card in player.combined)
+        # Find all values that appear exactly twice — skip if trips/quads are present
+        pair_vals = [v for v, c in counts.items() if c == 2]
+        if len(pair_vals) != 1 or any(c >= 3 for c in counts.values()):
+            continue
+        pair_val = pair_vals[0]
+        # Exclude only the paired value when computing kickers (not all duplicates)
+        kickers = tuple(sorted([v for v in counts if v != pair_val], reverse=True)[:3])
+        if best_pair_value is None or pair_val > best_pair_value:
+            best_pair_value = pair_val
+            best_kickers = kickers
+            best_players = [player]
+        elif pair_val == best_pair_value:
+            # Same pair value — compare kickers to find the better hand
+            if kickers > best_kickers:
+                best_kickers = kickers
+                best_players = [player]
+            elif kickers == best_kickers:
+                # Identical hand — split the pot
+                best_players.append(player)
+    return best_players if best_players else None
 
 def highcard(game):
     best_players = []
